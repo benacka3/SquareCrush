@@ -1,11 +1,13 @@
 package main.SquareCrushLIBGDX.gameLogic;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import main.SquareCrushLIBGDX.gameLogic.stvorce.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 /**
@@ -27,9 +29,8 @@ public class Display {
     private int tempScore;
     private static final int MAX_POKUSOV = 10;
     private final AtomicInteger score = new AtomicInteger(0);
-    private final AtomicInteger odhad = new AtomicInteger(0);
-    private ArrayList<Integer> odhadTahy;
     private boolean jeZapnuta;
+    private Consumer<String> zobrazovac = s -> {};
 
     /**
      * Konštruktor triedy Display nám inicializuje počiatočné hodnoty pre vytvorenie dvojrozmerného poľa,
@@ -45,7 +46,6 @@ public class Display {
         this.display = new StvorecDispleja[this.riadky][this.riadky];
         this.pozriFarbu = new StvorecDispleja[this.riadky][this.riadky];
         this.ulozenaPoloha = new ArrayList<>();
-        this.odhadTahy = new ArrayList<>();
         this.jeZapnuta = true;
 
         for (int i = 0; i < this.riadky; i++) {
@@ -65,13 +65,20 @@ public class Display {
         }
     }
 
+    // Pridaj setter alebo do konštruktora
+    public void setZobrazovac(Consumer<String> zobrazovac) {
+        this.zobrazovac = zobrazovac;
+    }
+
     public void gameLoop() {
         try {
             if (this.jeZapnuta) {
-                this.pozriRiadky(this.display);
-                this.pozriStlpce(this.display);
+                this.pozriRiadky(this.display , true , null);
+                this.pozriStlpce(this.display , true , null);
                 this.vykresli();
                 this.posunDole(this.display);
+                this.paralelnaHeuristikaRiadky();
+                this.paralelnaHeuristikaStlpce();
 
                 if (this.tahy == (this.riadky * 3)) {
                     this.score.set(0);
@@ -231,7 +238,12 @@ public class Display {
      * dolný roh, vynecháva štvorce, ktoré sú biele, pozerá aktuálny a ďalšie dva nasledujúce, ak sa nájde zhoda
      * pre 4 a 5 štvorcov, tak sa vytvoria špeciálne štvorce
      */
-    private void pozriRiadky(StvorecDispleja[][] pole) {
+    private void pozriRiadky(StvorecDispleja[][] pole , boolean flag , AtomicInteger localScore) {
+        if (pole == null) {
+            System.out.println("nemáme pole");
+            return;
+        }
+
         IntStream.range(0, riadky) // Iterujeme cez všetky riadky
             .parallel() // Paralelné spracovanie
             .forEach(i -> {
@@ -249,12 +261,16 @@ public class Display {
                         k++; // Posúvame sa doprava, kým nachádzame zhodné
                     }
 
-                    // Zvýš skóre podľa počtu nájdených zhod
-                    score.addAndGet((k - j) * 100);
+                    if (flag) {
+                        // Zvýš skóre podľa počtu nájdených zhod
+                        score.addAndGet((k - j) * 100);
 
-                    // Vymaž všetky zhody v rade od indexu j po k
-                    for (int x = j; x < k; x++) {
-                        pole[i][x].vymaz(this, i, x);
+                        // Vymaž všetky zhody v rade od indexu j po k
+                        for (int x = j; x < k; x++) {
+                            pole[i][x].vymaz(this, i, x);
+                        }
+                    } else {
+                        localScore.addAndGet((k - j));
                     }
 
                     // Nastav ukazovateľ na koniec vymazanej sekvencie (k - 1)
@@ -269,37 +285,89 @@ public class Display {
      * pre 4 a 5 štvorcov, tak sa vykonajú špeciálne štvorce, rozdiel je v tom, že oproti metóde pozriRiadky
      * sú otočené iterátory a tým sa pozerá pole pozerá z hora na dol
      */
-    private void pozriStlpce(StvorecDispleja[][] pole) {
-        IntStream.range(0, this.riadky) // Iterujeme cez všetky stĺpce
-            .parallel() // Paralelné spracovanie
+    private void pozriStlpce(StvorecDispleja[][] pole, boolean flag, AtomicInteger localScore) {
+        if (pole == null) {
+            System.out.println("nemáme pole");
+            return;
+        }
+
+        IntStream.range(0, this.riadky) // správne: stĺpce iterujeme cez j
+            .parallel()
             .forEach(j -> {
                 for (int i = 0; i < riadky - 2; i++) {
-                    // Kontrola trojice zhodných farieb v stĺpci
                     if (!pole[i][j].getFarba().equals(pole[i + 1][j].getFarba()) ||
                         !pole[i][j].getFarba().equals(pole[i + 2][j].getFarba())) {
                         continue;
                     }
 
-                    // Ak nájdeme tri alebo viac zhodných, začneme vyhľadávať ďalšie
                     String farba = pole[i][j].getFarba();
-                    int k = i; // Začiatočný index
+                    int k = i;
                     while (k < this.riadky && pole[k][j].getFarba().equals(farba)) {
-                        k++; // Posúvame sa nadol, kým nachádzame zhodné
+                        k++;
                     }
 
-                    // Zvýš skóre podľa počtu nájdených zhod
-                    score.addAndGet((k - i) * 100);
-
-                    // Vymaž všetky zhody v stĺpci od indexu i po k
-                    for (int x = i; x < k; x++) {
-                        pole[x][j].vymaz(this, x, j);
+                    if (flag) {
+                        score.addAndGet((k - i) * 100);
+                        for (int x = i; x < k; x++) {
+                            pole[x][j].vymaz(this, x, j);
+                        }
+                    } else {
+                        localScore.addAndGet((k - i));  // počet zhôd, nie len 1
                     }
-
-                    // Nastav ukazovateľ na koniec vymazanej sekvencie (k - 1)
                     i = k - 1;
                 }
             });
     }
+
+    public void paralelnaHeuristikaRiadky() {
+        IntStream.range(0, this.riadky)
+            .parallel()
+            .forEach(i -> {
+                for (int j = 0; j < this.riadky - 1; j++) {
+                    StvorecDispleja[][] kopia = vytvorKopiuHry();
+
+                    StvorecDispleja temp = kopia[i][j];
+                    kopia[i][j] = kopia[i][j + 1];
+                    kopia[i][j + 1] = temp;
+
+                    AtomicInteger localScore = new AtomicInteger();
+                    this.pozriRiadky(kopia, false, localScore);
+
+                    if (localScore.get() > 0 && localScore.get() > 3) {
+                        String sprava = String.format("Platny tah na riadku %d, pozície %d <-> %d | Zhody: %d", j, i, i + 1, localScore.get());
+                        System.out.println(sprava);
+                    }
+                }
+            });
+    }
+
+
+
+
+    public void paralelnaHeuristikaStlpce() {
+        IntStream.range(0, this.riadky)
+            .parallel()
+            .forEach(j -> {
+                for (int i = 0; i < this.riadky - 1; i++) {
+                    StvorecDispleja[][] kopia = vytvorKopiuHry();
+
+                    // Prehodenie prvkov v stĺpci na riadkoch i a i+1
+                    StvorecDispleja temp = kopia[i][j];
+                    kopia[i][j] = kopia[i + 1][j];
+                    kopia[i + 1][j] = temp;
+
+                    AtomicInteger localScore = new AtomicInteger();
+                    this.pozriStlpce(kopia, false, localScore);
+
+                    if (localScore.get() > 0 && localScore.get() < 3) {
+                        String sprava = String.format("Platný ťah na stĺpci %d, pozície %d <-> %d | Zhody: %d", i, j, j + 1, localScore.get());
+                        this.display[i][j].setOznacene();
+                        System.out.println(sprava);
+                    }
+                }
+            });
+    }
+
 
     public void vykresli() {
         try {
@@ -386,15 +454,17 @@ public class Display {
     /**
      * Metóda nám uloží pôvodnú hru aby sme sa vedeli vrátiť o krok späť
      */
-    public void ulozHru() {
-        this.ulozenaHra = new StvorecDispleja[this.riadky][this.riadky];
-
-        for (int i = 0 ; i < this.riadky ; i++) {
-            for (int j = 0 ; j < this.riadky ; j++) {
-                this.ulozenaHra[i][j] = this.display[i][j];
+    private StvorecDispleja[][] vytvorKopiuHry() {
+        StvorecDispleja[][] kopia = new StvorecDispleja[this.riadky][this.riadky];
+        for (int i = 0; i < this.riadky; i++) {
+            for (int j = 0; j < this.riadky; j++) {
+                kopia[i][j] = new Zakladny(display[i][j].getFarba(), display[i][j].getX(), display[i][j].getY());
             }
         }
+        return kopia;
     }
+
+
 
     public void zrusOznacenie() {
         for (int i = 0 ; i < this.riadky ; i++) {
@@ -435,4 +505,6 @@ public class Display {
             this.score.set(0);
         }
     }
+
+
 }

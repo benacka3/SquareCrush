@@ -4,6 +4,10 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import main.SquareCrushLIBGDX.Main;
 import com.badlogic.gdx.math.Rectangle;
 import main.SquareCrushLIBGDX.gameLogic.Display;
@@ -53,8 +57,10 @@ public class menuHra implements Screen {
     private Map<String, Pixmap> pixCacheOznacene;
     private boolean jeZapnuta;
 
-    public menuHra(Main game , Display hra) {
+    private Stage stage;
+    private Skin skin;
 
+    public menuHra(Main game , Display hra) {
         this.pixCacheOriginal = new HashMap<>();
         this.pixCacheOznacene = new HashMap<>();
 
@@ -72,6 +78,7 @@ public class menuHra implements Screen {
         pixCacheOznacene.put("magenta", new Pixmap(Gdx.files.internal("magentaOzn.png")));
 
         this.hra = hra;
+        this.hra.setZobrazovac(sprava -> this.zobrazChybu(sprava));
 
         this.jeZapnuta = true;
 
@@ -139,11 +146,25 @@ public class menuHra implements Screen {
 
     @Override
     public void show() {
+        stage = new Stage(new ScreenViewport());
+        Gdx.input.setInputProcessor(stage);
+        this.skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
+    }
 
+    public void zobrazChybu(String text) {
+        Dialog dialog = new Dialog("Info", skin, "dialog") {
+            protected void result(Object obj) {
+                System.out.println("Zatvorené: " + obj);
+            }
+        };
+        dialog.text(text);
+        dialog.button("OK", true);
+        dialog.show(stage);
     }
 
     @Override
     public void render(float v) {
+        this.show();
         try {
             this.timer++;
 
