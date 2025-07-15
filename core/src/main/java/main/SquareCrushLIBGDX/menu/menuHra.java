@@ -10,7 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import main.SquareCrushLIBGDX.Main;
 import com.badlogic.gdx.math.Rectangle;
-import main.SquareCrushLIBGDX.gameLogic.Display;
+import main.SquareCrushLIBGDX.gameLogic.controlery.Display;
 
 import java.util.ArrayList;
 import java.util.HashMap;

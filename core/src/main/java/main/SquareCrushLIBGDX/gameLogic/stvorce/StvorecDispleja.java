@@ -1,6 +1,6 @@
 package main.SquareCrushLIBGDX.gameLogic.stvorce;
 
-import main.SquareCrushLIBGDX.gameLogic.Display;
+import main.SquareCrushLIBGDX.gameLogic.controlery.Display;
 
 /**
  * Trieda StvorecDispleja je abstraktná metóda, ktorá nám umožňuje implementovať do hry viac druhov štvorcov aby sme

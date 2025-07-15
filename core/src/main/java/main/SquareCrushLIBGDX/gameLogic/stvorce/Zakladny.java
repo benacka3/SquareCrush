@@ -1,6 +1,6 @@
 package main.SquareCrushLIBGDX.gameLogic.stvorce;
 
-import main.SquareCrushLIBGDX.gameLogic.Display;
+import main.SquareCrushLIBGDX.gameLogic.controlery.Display;
 
 /**
  * Trieda Zakladny je potomkom triedy StvorecDispleja, ktorá má v sebe metódu vymaz a tým dochádza k polymorfizmu.

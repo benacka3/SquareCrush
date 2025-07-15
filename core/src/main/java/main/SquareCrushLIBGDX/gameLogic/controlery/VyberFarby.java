@@ -1,4 +1,4 @@
-package main.SquareCrushLIBGDX.gameLogic;
+package main.SquareCrushLIBGDX.gameLogic.controlery;
 
 import java.util.Random;
 

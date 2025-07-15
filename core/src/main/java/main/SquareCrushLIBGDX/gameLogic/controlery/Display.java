@@ -1,11 +1,10 @@
-package main.SquareCrushLIBGDX.gameLogic;
+package main.SquareCrushLIBGDX.gameLogic.controlery;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import main.SquareCrushLIBGDX.gameLogic.stvorce.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -31,6 +30,8 @@ public class Display {
     private final AtomicInteger score = new AtomicInteger(0);
     private boolean jeZapnuta;
     private Consumer<String> zobrazovac = s -> {};
+    private AtomicGridFlat grid;
+    private GridPoint gridPoint;
 
     /**
      * Konštruktor triedy Display nám inicializuje počiatočné hodnoty pre vytvorenie dvojrozmerného poľa,
@@ -47,6 +48,7 @@ public class Display {
         this.pozriFarbu = new StvorecDispleja[this.riadky][this.riadky];
         this.ulozenaPoloha = new ArrayList<>();
         this.jeZapnuta = true;
+        this.grid = new AtomicGridFlat(this.riadky , this.riadky);
 
         for (int i = 0; i < this.riadky; i++) {
             for (int j = 0; j < this.riadky; j++) {
@@ -180,7 +182,6 @@ public class Display {
      * @return Vracia hodnotu True alebo False na základe zistenej zhody
      */
     public boolean vymenStvorec(int riadok1, int stlpec1, int riadok2, int stlpec2) {
-        // Skontrolujeme, či sú indexy platné
         if (riadok1 < 0 || riadok1 >= this.pozriFarbu.length || stlpec1 < 0 || stlpec1 >= this.pozriFarbu[riadok1].length ||
             riadok2 < 0 || riadok2 >= this.pozriFarbu.length || stlpec2 < 0 || stlpec2 >= this.pozriFarbu[riadok2].length) {
             System.out.println("Neplatný index do poľa.");
@@ -334,8 +335,7 @@ public class Display {
                     this.pozriRiadky(kopia, false, localScore);
 
                     if (localScore.get() > 0 && localScore.get() > 3) {
-                        String sprava = String.format("Platny tah na riadku %d, pozície %d <-> %d | Zhody: %d", j, i, i + 1, localScore.get());
-                        System.out.println(sprava);
+                        this.grid.addScore(j , i , localScore.get());
                     }
                 }
             });
@@ -359,10 +359,8 @@ public class Display {
                     AtomicInteger localScore = new AtomicInteger();
                     this.pozriStlpce(kopia, false, localScore);
 
-                    if (localScore.get() > 0 && localScore.get() < 3) {
-                        String sprava = String.format("Platný ťah na stĺpci %d, pozície %d <-> %d | Zhody: %d", i, j, j + 1, localScore.get());
-                        this.display[i][j].setOznacene();
-                        System.out.println(sprava);
+                    if (localScore.get() > 0 && localScore.get() > 3) {
+                        this.grid.addScore(i , j , localScore.get());
                     }
                 }
             });
@@ -506,5 +504,10 @@ public class Display {
         }
     }
 
+    public void printTopPoints(List<GridPoint> topPoints) {
+        for (GridPoint gp : topPoints) {
+            System.out.printf("x=%d, y=%d, score=%d%n", gp.getX(), gp.getY(), gp.getValue());
+        }
+    }
 
 }

@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import main.SquareCrushLIBGDX.Main;
 import com.badlogic.gdx.math.Rectangle;
-import main.SquareCrushLIBGDX.gameLogic.Display;
+import main.SquareCrushLIBGDX.gameLogic.controlery.Display;
 
 public class menu implements Screen {
 

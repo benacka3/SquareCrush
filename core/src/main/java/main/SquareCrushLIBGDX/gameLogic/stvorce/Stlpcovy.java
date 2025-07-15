@@ -1,7 +1,7 @@
 package main.SquareCrushLIBGDX.gameLogic.stvorce;
 
-import main.SquareCrushLIBGDX.gameLogic.Display;
-import main.SquareCrushLIBGDX.gameLogic.VyberFarby;
+import main.SquareCrushLIBGDX.gameLogic.controlery.Display;
+import main.SquareCrushLIBGDX.gameLogic.controlery.VyberFarby;
 
 /**
  * Trieda Stlpcovy je potomkom triedy StvorecDispleja, ktorá má v sebe metódu vymaz a tým dochádza k polymorfizmu.
